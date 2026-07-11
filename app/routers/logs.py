@@ -1,13 +1,19 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from app.models import Log
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/logs",
+    tags=["Logs"],
+)
 
 
-@router.post("/logs")
+@router.post(
+    "",
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def ingest_log(log: Log):
     return {
-        "status": "received",
-        "log": log,
+        "status": "accepted",
+        "log": log.model_dump(),
     }
