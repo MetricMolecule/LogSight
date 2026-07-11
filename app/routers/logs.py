@@ -1,5 +1,8 @@
+import json
+
 from fastapi import APIRouter, status
 
+from app.core.redis import redis
 from app.models import Log
 
 router = APIRouter(
@@ -7,13 +10,19 @@ router = APIRouter(
     tags=["Logs"],
 )
 
+STREAM_NAME = "logs"
 
-@router.post(
-    "",
-    status_code=status.HTTP_202_ACCEPTED,
-)
+
+@router.post("", status_code=status.HTTP_202_ACCEPTED)
 async def ingest_log(log: Log):
-    return {
-        "status": "accepted",
-        "log": log.model_dump(),
-    }
+
+    payload = log.model_dump(mode="json")
+
+    payload["metadata"] = json.dumps(payload["metadata"])
+
+    await redis.xadd(
+        STREAM_NAME,
+        payload,
+    )
+
+    return {"status": "accepted"}
