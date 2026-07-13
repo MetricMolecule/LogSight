@@ -3,7 +3,7 @@ import json
 from fastapi import APIRouter, status
 
 from app.core.redis import redis
-from app.models import Log
+from app.schemas import LogEntry
 
 router = APIRouter(
     prefix="/logs",
@@ -14,7 +14,7 @@ STREAM_NAME = "logs"
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED)
-async def ingest_log(log: Log):
+async def ingest_log(log: LogEntry):
 
     payload = log.model_dump(mode="json")
 

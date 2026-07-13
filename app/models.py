@@ -1,35 +1,36 @@
 from datetime import datetime
-from enum import Enum
-from typing import Any
 
-from pydantic import BaseModel, Field
+from sqlalchemy import JSON, DateTime, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-
-class LogLevel(str, Enum):
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
+from app.core.database import Base
 
 
-class Log(BaseModel):
-    service: str = Field(..., description="Service generating the log")
-    level: LogLevel = Field(..., description="Severity level")
-    message: str = Field(..., description="Log message")
+class Log(Base):
+    __tablename__ = "logs"
 
-    timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Time the log was created"
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    service: Mapped[str] = mapped_column(String(100), index=True)
+
+    level: Mapped[str] = mapped_column(String(20), index=True)
+
+    message: Mapped[str] = mapped_column(String)
+
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        index=True,
     )
 
-    request_id: str | None = Field(
-        default=None, description="Unique request identifier"
+    request_id: Mapped[str] = mapped_column(
+        String(100),
+        index=True,
     )
 
-    user_id: str | None = Field(
-        default=None, description="User associated with the request"
-    )
+    user_id: Mapped[str] = mapped_column(String(100))
 
-    metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional log metadata"
+    log_metadata: Mapped[dict] = mapped_column(
+        "metadata",
+        JSON,
     )
