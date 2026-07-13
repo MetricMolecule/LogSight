@@ -1,11 +1,25 @@
-version: "3.9"
-
 services:
+
   redis:
     image: redis:7-alpine
     container_name: logsight-redis
-
     ports:
       - "6379:6379"
 
-    command: redis-server --appendonly yes
+  postgres:
+    image: postgres:16-alpine
+    container_name: logsight-postgres
+
+    environment:
+      POSTGRES_DB: logsight
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
