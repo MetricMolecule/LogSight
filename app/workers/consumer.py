@@ -1,4 +1,4 @@
-import asyncio
+import json
 
 from redis.exceptions import ResponseError
 
@@ -38,27 +38,28 @@ async def consume():
             block=5000,
         )
 
-        if response:
-            stream_name, messages = response[0]
+        if not response:
+            continue
 
-            for message_id, fields in messages:
-                print(f"Received {message_id}")
+        _, messages = response[0]
 
-                try:
-                    with get_db() as db:
-                        save_log(db, fields)
+        for message_id, fields in messages:
+            print(f"Received {message_id}")
 
-                    await redis.xack(
-                        STREAM,
-                        GROUP,
-                        message_id,
-                    )
+            try:
+                # Convert Redis JSON string back into Python dict
+                fields["metadata"] = json.loads(fields["metadata"])
 
-                    print(f"Stored and ACKed {message_id}")
+                with get_db() as db:
+                    save_log(db, fields)
 
-                except Exception as e:
-                    print(f"Failed: {e}")
+                await redis.xack(
+                    STREAM,
+                    GROUP,
+                    message_id,
+                )
 
+                print(f"Stored and ACKed {message_id}")
 
-if __name__ == "__main__":
-    asyncio.run(consume())
+            except Exception as e:
+                print(f"Failed to process {message_id}: {e}")
