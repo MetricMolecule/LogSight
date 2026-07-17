@@ -82,6 +82,18 @@ async def process_batch(logs):
             with get_db() as db:
                 save_logs_bulk(db, logs)
 
+                from app.core.websocket_manager import manager
+
+                for log in logs:
+                    await manager.broadcast(
+                        {
+                            "service": log.service,
+                            "level": log.level,
+                            "message": log.message,
+                            "timestamp": str(log.timestamp),
+                        }
+                    )
+
             print(f"Batch stored successfully (attempt {attempt})")
 
             return True, None
@@ -124,6 +136,21 @@ async def process_messages(messages):
     success, reason = await process_batch(logs)
 
     if success:
+        for log in logs:
+            await redis.publish(
+                "logs-live",
+                json.dumps(
+                    {
+                        "service": log.service,
+                        "level": log.level,
+                        "message": log.message,
+                        "timestamp": str(log.timestamp),
+                        "request_id": log.request_id,
+                        "user_id": log.user_id,
+                    }
+                ),
+            )
+
         await redis.xack(
             STREAM,
             GROUP,

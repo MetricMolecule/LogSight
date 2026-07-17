@@ -1,0 +1,41 @@
+body {
+    font-family: Arial;
+    background: #111;
+    color: white;
+    padding: 30px;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+
+    background: #333;
+
+    padding: 10px;
+}
+
+td {
+
+    padding: 10px;
+
+    border-bottom: 1px solid #444;
+}
+
+.ERROR {
+    color: red;
+}
+
+.INFO {
+    color: lime;
+}
+
+.WARN {
+    color: orange;
+}
