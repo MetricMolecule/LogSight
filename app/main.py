@@ -11,10 +11,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
-app.include_router(logs_router)
-app.include_router(analytics_router)
-app.include_router(ws_router)
-
+# Serve css/js/images
 app.mount(
     "/static",
     StaticFiles(directory="app/static"),
@@ -22,6 +19,11 @@ app.mount(
 )
 
 
-@app.get("/", include_in_schema=False)
+@app.get("/")
 async def home():
     return FileResponse("app/static/index.html")
+
+
+app.include_router(logs_router)
+app.include_router(analytics_router)
+app.include_router(ws_router)
