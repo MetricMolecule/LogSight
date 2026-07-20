@@ -1,14 +1,22 @@
+import asyncio
 import json
+from datetime import datetime
 
 from redis.exceptions import ResponseError
 
 from app.core.database import get_db
 from app.core.redis import redis
-from app.services.log_service import save_log
+from app.models import Log
+from app.services.log_service import save_logs_bulk
 
 STREAM = "logs"
+DLQ_STREAM = "logs-dead-letter"
+
 GROUP = "logsight-workers"
 CONSUMER = "worker-1"
+
+BATCH_SIZE = 100
+MAX_RETRIES = 3
 
 
 async def create_group():
@@ -24,17 +32,188 @@ async def create_group():
             raise
 
 
+async def send_to_dlq(messages, reason):
+    print(">>>>>>>> ENTERED DLQ FUNCTION <<<<<<<<")
+
+    print(f"Messages = {len(messages)}")
+
+    for _, fields in messages:
+        print("Sending one message...")
+
+        dlq_message = {
+            **fields,
+            "failure_reason": reason,
+            "failed_at": datetime.utcnow().isoformat(),
+        }
+
+        result = await redis.xadd(
+            DLQ_STREAM,
+            dlq_message,
+        )
+
+        print(f"Inserted into DLQ: {result}")
+
+    print("<<<<<<<< FINISHED DLQ FUNCTION >>>>>>>>")
+
+
+# async def send_to_dlq(messages, reason):
+#     print(f"\nMoving {len(messages)} messages to DLQ...\n")
+
+#     for _, fields in messages:
+#         dlq_message = {
+#             **fields,
+#             "failure_reason": reason,
+#             "failed_at": datetime.utcnow().isoformat(),
+#         }
+
+#         await redis.xadd(
+#             DLQ_STREAM,
+#             dlq_message,
+#         )
+
+#     print("Messages moved to Dead Letter Queue\n")
+
+
+async def process_batch(logs):
+    last_exception = None
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            with get_db() as db:
+                save_logs_bulk(db, logs)
+
+                from app.core.websocket_manager import manager
+
+                for log in logs:
+                    await manager.broadcast(
+                        {
+                            "service": log.service,
+                            "level": log.level,
+                            "message": log.message,
+                            "timestamp": str(log.timestamp),
+                        }
+                    )
+
+            print(f"Batch stored successfully (attempt {attempt})")
+
+            return True, None
+
+        except Exception as e:
+            last_exception = str(e)
+
+            print(f"Attempt {attempt} failed:")
+            print(last_exception)
+
+            if attempt < MAX_RETRIES:
+                print("Retrying in 2 seconds...\n")
+                await asyncio.sleep(2)
+
+    print("Batch permanently failed.\n")
+
+    return False, last_exception
+
+
+async def process_messages(messages):
+
+    logs = []
+    message_ids = []
+
+    for message_id, fields in messages:
+        logs.append(
+            Log(
+                service=fields["service"],
+                level=fields["level"],
+                message=fields["message"],
+                timestamp=fields["timestamp"],
+                request_id=fields["request_id"],
+                user_id=fields["user_id"],
+                log_metadata=json.loads(fields["metadata"]),
+            )
+        )
+
+        message_ids.append(message_id)
+
+    success, reason = await process_batch(logs)
+
+    if success:
+        for log in logs:
+            await redis.publish(
+                "logs-live",
+                json.dumps(
+                    {
+                        "service": log.service,
+                        "level": log.level,
+                        "message": log.message,
+                        "timestamp": str(log.timestamp),
+                        "request_id": log.request_id,
+                        "user_id": log.user_id,
+                    }
+                ),
+            )
+
+        await redis.xack(
+            STREAM,
+            GROUP,
+            *message_ids,
+        )
+
+        print(f"ACKed {len(message_ids)} messages\n")
+
+    else:
+        try:
+            await send_to_dlq(messages, reason)
+        except Exception as e:
+            print("DLQ ERROR:")
+            print(repr(e))
+            raise
+
+        await redis.xack(
+            STREAM,
+            GROUP,
+            *message_ids,
+        )
+
+        print("Failed batch moved to DLQ and ACKed.\n")
+
+
+async def recover_pending():
+
+    print("Checking pending messages...")
+
+    while True:
+        response = await redis.xautoclaim(
+            STREAM,
+            GROUP,
+            CONSUMER,
+            min_idle_time=5000,
+            start_id="0-0",
+            count=BATCH_SIZE,
+        )
+
+        _, messages, _ = response
+
+        if not messages:
+            break
+
+        print(f"Recovered {len(messages)} pending messages")
+
+        await process_messages(messages)
+
+
 async def consume():
+
     await create_group()
 
-    print("Worker started...")
+    await recover_pending()
+
+    print("Worker started\n")
 
     while True:
         response = await redis.xreadgroup(
             groupname=GROUP,
             consumername=CONSUMER,
             streams={STREAM: ">"},
-            count=1,
+            count=BATCH_SIZE,
             block=5000,
         )
 
@@ -43,23 +222,8 @@ async def consume():
 
         _, messages = response[0]
 
-        for message_id, fields in messages:
-            print(f"Received {message_id}")
+        await process_messages(messages)
 
-            try:
-                # Convert Redis JSON string back into Python dict
-                fields["metadata"] = json.loads(fields["metadata"])
 
-                with get_db() as db:
-                    save_log(db, fields)
-
-                await redis.xack(
-                    STREAM,
-                    GROUP,
-                    message_id,
-                )
-
-                print(f"Stored and ACKed {message_id}")
-
-            except Exception as e:
-                print(f"Failed to process {message_id}: {e}")
+if __name__ == "__main__":
+    asyncio.run(consume())

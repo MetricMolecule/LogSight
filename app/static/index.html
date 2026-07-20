@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LogSight Dashboard</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+
+</head>
+
+<body>
+
+    <h1>LogSight Dashboard</h1>
+
+    <!-- Stats Cards -->
+
+    <div class="cards">
+
+        <div class="card">
+            <h3>Total Logs</h3>
+            <h1 id="totalLogs">0</h1>
+        </div>
+
+        <div class="card">
+            <h3>Errors</h3>
+            <h1 id="errorLogs">0</h1>
+        </div>
+
+        <div class="card">
+            <h3>Warnings</h3>
+            <h1 id="warningLogs">0</h1>
+        </div>
+
+        <div class="card">
+            <h3>Services</h3>
+            <h1 id="services">0</h1>
+        </div>
+
+    </div>
+
+    <!-- Charts -->
+
+    <div class="charts-grid">
+
+        <div class="chart-card">
+            <h3>Logs by Level</h3>
+            <canvas id="levelsChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Logs by Service</h3>
+            <canvas id="servicesChart"></canvas>
+        </div>
+
+        <div class="chart-card full-width">
+            <h3>Logs Per Hour</h3>
+            <canvas id="hourlyChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- Logs Table -->
+
+    <table>
+
+        <thead>
+
+            <tr>
+                <th>Timestamp</th>
+                <th>Service</th>
+                <th>Level</th>
+                <th>Message</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        </tbody>
+
+    </table>
+
+    <!-- Scripts -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/app.js"></script>
+
+</body>
+
+</html>
