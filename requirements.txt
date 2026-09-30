@@ -10,6 +10,7 @@ distlib==0.4.3
 fastapi==0.139.0
 filelock==3.29.6
 h11==0.16.0
+httptools==0.8.0
 identify==2.6.19
 idna==3.18
 isort==8.0.1
@@ -19,10 +20,13 @@ packaging==26.2
 pathspec==1.1.1
 platformdirs==4.10.0
 pre_commit==4.6.0
+psycopg==3.3.6
+psycopg-binary==3.3.6
 psycopg2-binary==2.9.12
 pydantic==2.13.4
 pydantic_core==2.46.4
 python-discovery==1.4.3
+python-dotenv==1.2.2
 pytokens==0.4.1
 PyYAML==6.0.3
 redis==8.0.1
@@ -34,5 +38,7 @@ typing-inspection==0.4.2
 typing_extensions==4.16.0
 urllib3==2.7.0
 uvicorn==0.50.2
+uvloop==0.22.1
 virtualenv==21.6.0
+watchfiles==1.2.0
 websockets==16.1
