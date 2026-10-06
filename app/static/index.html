@@ -2,92 +2,759 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>LogSight Dashboard</title>
+    <title>LogSight — Distributed Log Observability</title>
 
-    <link rel="stylesheet" href="/static/style.css">
-
+    <!-- v=2 prevents the browser from using an old cached stylesheet -->
+    <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 
 <body>
 
-    <h1>LogSight Dashboard</h1>
+    <main class="container">
 
-    <!-- Stats Cards -->
+        <!-- ================= HEADER ================= -->
 
-    <div class="cards">
+        <header class="topbar">
 
-        <div class="card">
-            <h3>Total Logs</h3>
-            <h1 id="totalLogs">0</h1>
-        </div>
+            <div class="brand-section">
 
-        <div class="card">
-            <h3>Errors</h3>
-            <h1 id="errorLogs">0</h1>
-        </div>
+                <div class="eyebrow">
+                    LOGSIGHT / OBSERVABILITY
+                </div>
 
-        <div class="card">
-            <h3>Warnings</h3>
-            <h1 id="warningLogs">0</h1>
-        </div>
+                <h1>
+                    Distributed Log Dashboard
+                </h1>
 
-        <div class="card">
-            <h3>Services</h3>
-            <h1 id="services">0</h1>
-        </div>
+                <p class="subtitle">
+                    Async ingestion, background processing,
+                    persistent storage and real-time delivery.
+                </p>
 
-    </div>
+            </div>
 
-    <!-- Charts -->
+            <div class="header-actions">
 
-    <div class="charts-grid">
+                <span id="connectionStatus" class="status-pill connecting">
 
-        <div class="chart-card">
-            <h3>Logs by Level</h3>
-            <canvas id="levelsChart"></canvas>
-        </div>
+                    <span class="status-dot"></span>
 
-        <div class="chart-card">
-            <h3>Logs by Service</h3>
-            <canvas id="servicesChart"></canvas>
-        </div>
+                    Connecting
 
-        <div class="chart-card full-width">
-            <h3>Logs Per Hour</h3>
-            <canvas id="hourlyChart"></canvas>
-        </div>
+                </span>
 
-    </div>
+                <a href="/docs" target="_blank" class="docs-link">
+                    API Docs ↗
+                </a>
 
-    <!-- Logs Table -->
+            </div>
 
-    <table>
+        </header>
 
-        <thead>
 
-            <tr>
-                <th>Timestamp</th>
-                <th>Service</th>
-                <th>Level</th>
-                <th>Message</th>
-            </tr>
+        <!-- ================= ARCHITECTURE ================= -->
 
-        </thead>
+        <section class="architecture-card">
 
-        <tbody>
+            <div class="section-heading">
 
-        </tbody>
+                <div>
 
-    </table>
+                    <div class="eyebrow">
+                        SYSTEM PIPELINE
+                    </div>
 
-    <!-- Scripts -->
+                    <h2>
+                        How a log moves through LogSight
+                    </h2>
+
+                </div>
+
+                <span class="architecture-label">
+                    LIVE ARCHITECTURE
+                </span>
+
+            </div>
+
+
+            <div class="pipeline">
+
+                <!-- FASTAPI -->
+
+                <div class="pipeline-node api-node">
+
+                    <span class="node-number">
+                        01
+                    </span>
+
+                    <div class="node-icon">
+                        API
+                    </div>
+
+                    <strong>
+                        FastAPI
+                    </strong>
+
+                    <small>
+                        HTTP ingestion
+                    </small>
+
+                </div>
+
+
+                <div class="pipeline-arrow">
+                    →
+                </div>
+
+
+                <!-- REDIS -->
+
+                <div class="pipeline-node redis-node">
+
+                    <span class="node-number">
+                        02
+                    </span>
+
+                    <div class="node-icon">
+                        R
+                    </div>
+
+                    <strong>
+                        Redis Streams
+                    </strong>
+
+                    <small>
+                        Async buffer
+                    </small>
+
+                </div>
+
+
+                <div class="pipeline-arrow">
+                    →
+                </div>
+
+
+                <!-- WORKER -->
+
+                <div class="pipeline-node worker-node">
+
+                    <span class="node-number">
+                        03
+                    </span>
+
+                    <div class="node-icon">
+                        W
+                    </div>
+
+                    <strong>
+                        Worker
+                    </strong>
+
+                    <small>
+                        Background processing
+                    </small>
+
+                </div>
+
+
+                <div class="pipeline-arrow">
+                    →
+                </div>
+
+
+                <!-- POSTGRES -->
+
+                <div class="pipeline-node postgres-node">
+
+                    <span class="node-number">
+                        04
+                    </span>
+
+                    <div class="node-icon">
+                        PG
+                    </div>
+
+                    <strong>
+                        PostgreSQL
+                    </strong>
+
+                    <small>
+                        Persistent storage
+                    </small>
+
+                </div>
+
+
+                <div class="pipeline-arrow">
+                    →
+                </div>
+
+
+                <!-- WEBSOCKET -->
+
+                <div class="pipeline-node realtime-node">
+
+                    <span class="node-number">
+                        05
+                    </span>
+
+                    <div class="node-icon">
+                        WS
+                    </div>
+
+                    <strong>
+                        WebSocket
+                    </strong>
+
+                    <small>
+                        Live dashboard
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="architecture-note">
+
+                <span class="note-arrow">
+                    ↳
+                </span>
+
+                <span>
+                    Redis Streams decouple HTTP ingestion from database
+                    writes. Redis Pub/Sub and WebSockets deliver processed
+                    events to connected clients.
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= STAT CARDS ================= -->
+
+        <section class="cards">
+
+            <div class="card">
+
+                <span class="card-label">
+                    TOTAL LOGS
+                </span>
+
+                <strong id="totalLogs">
+                    0
+                </strong>
+
+                <span class="card-meta">
+                    Persisted events
+                </span>
+
+            </div>
+
+
+            <div class="card error-card">
+
+                <span class="card-label">
+                    ERRORS
+                </span>
+
+                <strong id="errorLogs">
+                    0
+                </strong>
+
+                <span class="card-meta">
+                    Error-level events
+                </span>
+
+            </div>
+
+
+            <div class="card warning-card">
+
+                <span class="card-label">
+                    WARNINGS
+                </span>
+
+                <strong id="warningLogs">
+                    0
+                </strong>
+
+                <span class="card-meta">
+                    Warning-level events
+                </span>
+
+            </div>
+
+
+            <div class="card">
+
+                <span class="card-label">
+                    SERVICES
+                </span>
+
+                <strong id="services">
+                    0
+                </strong>
+
+                <span class="card-meta">
+                    Active services
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= TEST + STACK ================= -->
+
+        <section class="grid-2">
+
+
+            <!-- SEND TEST LOG -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <span class="eyebrow">
+                            REAL-TIME INGESTION
+                        </span>
+
+                        <h2>
+                            Send a test log
+                        </h2>
+
+                    </div>
+
+                    <span class="small-label">
+                        POST /logs
+                    </span>
+
+                </div>
+
+
+                <form id="logForm">
+
+
+                    <div class="form-grid">
+
+                        <label>
+
+                            Service
+
+                            <input id="serviceInput" type="text" value="payment-service" required>
+
+                        </label>
+
+
+                        <label>
+
+                            Level
+
+                            <select id="levelInput">
+
+                                <option value="INFO">
+                                    INFO
+                                </option>
+
+                                <option value="WARN">
+                                    WARN
+                                </option>
+
+                                <option value="ERROR">
+                                    ERROR
+                                </option>
+
+                            </select>
+
+                        </label>
+
+                    </div>
+
+
+                    <label>
+
+                        Message
+
+                        <input id="messageInput" type="text" value="Payment gateway timeout" required>
+
+                    </label>
+
+
+                    <div class="form-grid">
+
+                        <label>
+
+                            Request ID
+
+                            <input id="requestInput" type="text" value="demo-ui-001">
+
+                        </label>
+
+
+                        <label>
+
+                            User ID
+
+                            <input id="userInput" type="text" value="user-demo">
+
+                        </label>
+
+                    </div>
+
+
+                    <button type="submit">
+                        Send log →
+                    </button>
+
+
+                    <div id="sendResult" class="form-result"></div>
+
+                </form>
+
+            </div>
+
+
+            <!-- RUNNING STACK -->
+
+            <div class="panel stack-panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <span class="eyebrow">
+                            COMPONENTS
+                        </span>
+
+                        <h2>
+                            Running stack
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <div class="component-list">
+
+
+                    <!-- API -->
+
+                    <div class="component-row">
+
+                        <span class="component-icon api">
+                            API
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                FastAPI
+                            </strong>
+
+                            <small>
+                                HTTP ingestion & analytics
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- REDIS -->
+
+                    <div class="component-row">
+
+                        <span class="component-icon redis">
+                            R
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                Redis
+                            </strong>
+
+                            <small>
+                                Streams + Pub/Sub
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- WORKER -->
+
+                    <div class="component-row">
+
+                        <span class="component-icon worker">
+                            W
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                Background Worker
+                            </strong>
+
+                            <small>
+                                Async log persistence
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- POSTGRES -->
+
+                    <div class="component-row">
+
+                        <span class="component-icon postgres">
+                            PG
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                PostgreSQL
+                            </strong>
+
+                            <small>
+                                Durable log storage
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- WEBSOCKET -->
+
+                    <div class="component-row">
+
+                        <span class="component-icon ws">
+                            WS
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                WebSocket
+                            </strong>
+
+                            <small>
+                                Real-time browser updates
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= CHARTS ================= -->
+
+        <section class="charts-grid">
+
+
+            <!-- LEVELS -->
+
+            <div class="chart-card">
+
+                <div class="chart-heading">
+
+                    <div>
+
+                        <h3>
+                            Logs by Level
+                        </h3>
+
+                        <span>
+                            Distribution
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="chart-container">
+
+                    <canvas id="levelsChart"></canvas>
+
+                </div>
+
+            </div>
+
+
+            <!-- SERVICES -->
+
+            <div class="chart-card">
+
+                <div class="chart-heading">
+
+                    <div>
+
+                        <h3>
+                            Logs by Service
+                        </h3>
+
+                        <span>
+                            Volume
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="chart-container">
+
+                    <canvas id="servicesChart"></canvas>
+
+                </div>
+
+            </div>
+
+
+            <!-- HOURLY -->
+
+            <div class="chart-card full-width">
+
+                <div class="chart-heading">
+
+                    <div>
+
+                        <h3>
+                            Logs Per Hour
+                        </h3>
+
+                        <span>
+                            Recent activity
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="chart-container">
+
+                    <canvas id="hourlyChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= LOG TABLE ================= -->
+
+        <section class="panel logs-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <span class="eyebrow">
+                        PERSISTED EVENTS
+                    </span>
+
+                    <h2>
+                        Recent logs
+                    </h2>
+
+                </div>
+
+                <span class="small-label">
+                    PostgreSQL → API
+                </span>
+
+            </div>
+
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Timestamp
+                            </th>
+
+                            <th>
+                                Service
+                            </th>
+
+                            <th>
+                                Level
+                            </th>
+
+                            <th>
+                                Message
+                            </th>
+
+                            <th>
+                                Request
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= FOOTER ================= -->
+
+        <footer>
+
+            <span>
+                LogSight
+            </span>
+
+            <span>
+                FastAPI · Redis · PostgreSQL · WebSockets · Docker
+            </span>
+
+        </footer>
+
+    </main>
+
+
+    <!-- Chart.js -->
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/static/app.js"></script>
+
+
+    <!-- LogSight JavaScript -->
+
+    <!-- v=2 prevents browser cache from serving old JS -->
+    <script src="/static/app.js?v=2"></script>
 
 </body>
 

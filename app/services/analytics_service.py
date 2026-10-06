@@ -102,21 +102,23 @@ def get_top_services(db, limit=5):
 
 
 def get_logs_hourly(db):
+    hour = func.date_trunc("hour", Log.timestamp)
+
     stmt = (
         select(
-            func.date_trunc("hour", Log.timestamp).label("hour"),
+            hour.label("hour"),
             func.count(Log.id).label("count"),
         )
-        .group_by(func.date_trunc("hour", Log.timestamp))
-        .order_by(func.date_trunc("hour", Log.timestamp))
+        .group_by(hour)
+        .order_by(hour)
     )
 
     rows = db.execute(stmt).all()
 
     return [
         {
-            "hour": hour.isoformat(),
-            "count": count,
+            "hour": row.hour,
+            "count": row.count,
         }
-        for hour, count in rows
+        for row in rows
     ]
